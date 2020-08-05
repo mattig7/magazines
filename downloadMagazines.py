@@ -59,9 +59,21 @@ def downloadLink(URL, magname):
     
     Path("./magname").mkdir(exist_ok=True)
     
-    # Download the file if doesn't exist
-    #TODO UP TP HERE! COME BACK TO THIS.
+    #Pull the filename out of the URL
+    urlParsed = urlparse(URL)
+    pdfFileName = urlParsed[2] #Path attribute of the url
+    pdfFileName = pdfFileName[pdfFileName.rfind('/')+1:]
+    pdfFileName = Path(magname)/Path(pdfFileName)
+    logger.debug(f"Found the filename of the pdf to be {pdfFileName}")
+    
+    if pdfFileName.exists():
+        logger.debug(f"The pdf file {pdfFileName} already exists. Not downloading")
 
+    else:
+        logger.debug(f"The pdf file {pdfFileName} doesn't exist. Downloading")
+    # Download the file if doesn't exist
+     
+    
     logger.debug(f"Completed function 'downloadLink' with:\nURL: {URL}\nmagname: {magname}")
 
 def findAndDownloadLinks (URL, magName):
@@ -69,8 +81,9 @@ def findAndDownloadLinks (URL, magName):
     Function to search through a website and download all potential magazine links it finds.
     Will call itself recursively on subsites that look promising to try to find all the magazines present.
     """
-    regex_GoodLink = re.compile(r"[Dd]ownload|(pdf|PDF)|[Nnext]")
+    regex_GoodLink = re.compile(r"(download|pdf|next)", flags=re.I)
     logger.debug(f"Commenced 'findAndDownloadLinks' function for {magName} with URL: {URL}.")
+    logger.debug(f"The regex to match for a good link text is {regex_GoodLink}")
     # send any pdf file links straight to downloadLink function
     if ".pdf" in URL:
         logger.debug(f"findAndDownloadLinks function was given a pdf link: {URL}. Sending to downloadLink function and returning.")
@@ -87,7 +100,7 @@ def findAndDownloadLinks (URL, magName):
     
     # Use Beautiful soup to find the links of interest
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
-    href = "href"
+    #href = "href"
     #logger.debug(f"The site obtained from {URL} is:\n{soup.prettify()}")
     #logger.debug(f"The site ({URL}) main section is: \n{soup.body.main.prettify()}")
     for link in soup.body.main.select('a[href]'):
@@ -98,16 +111,17 @@ def findAndDownloadLinks (URL, magName):
             logger.debug(f"Attempting to join:\n{URL}\n{urlParsed.geturl()}") 
             urlParsed = urlparse(urljoin(URL, urlParsed.geturl()))
             logger.debug(f"Updated the relative href to be: {urlParsed.geturl()}")
-
+        #logger.debug(f"Testing for good links. \nText is: {link.get_text()}\nURL is {urlParsed.geturl()}")
         if ".pdf" in urlParsed.geturl():
             logger.debug(f"The phrase '.pdf' is in the link. Calling downloadLink method to get it!")
             downloadLink(urlParsed.geturl(), magname)
-        elif regex_GoodLink.match(link.get_text()) and urlParsed.geturl() != URL:
+            logger.debug(f"Back in FindAndDownloadLinks function after downloading {URL}")
+        elif regex_GoodLink.search(link.get_text()) and urlParsed.geturl() != URL:
             logger.debug(f"No '.pdf' in href, but found good link words in the text. Download site and check it!")
             findAndDownloadLinks(urlParsed.geturl(), magname)
         else:
             logger.debug(f"No PDF here and no good words. No action for this link")
-            logger.debug(f"For reference, output of the regex match is {regex_GoodLink.match(link.get_text())}\nAnd the output of testing if urls are different is: {urlParsed.geturl() != URL}\nTherefore the if test should be: {bool(regex_GoodLink.match(link.get_text()) and urlParsed.geturl() != URL)}")
+            #logger.debug(f"For reference, output of the regex match is {regex_GoodLink.match(link.get_text())}\nAnd the output of testing if urls are different is: {urlParsed.geturl() != URL}\nTherefore the if test should be: {bool(regex_GoodLink.match(link.get_text()) and urlParsed.geturl() != URL)}")
     logger.debug(f"Completed 'findAndDownloadLinks' function for {magName} with URL: {URL}.")
 
 if __name__ == "__main__":
