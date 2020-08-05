@@ -17,7 +17,7 @@ magDefsFile = Path("./mag_config.json")
 logFile = Path("./mag.log")
 
 # Set up logging
-desiredLogLevel = logging.DEBUG
+desiredLogLevel = logging.INFO
 logger = logging.getLogger('Logger for magazine download program')
 logger.setLevel(desiredLogLevel) #Pass all message levels to the handlers by default
 
